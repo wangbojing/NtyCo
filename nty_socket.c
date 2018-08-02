@@ -179,8 +179,9 @@ int nty_recv(int fd, void *buf, int length) {
 
 	int ret = recv(fd, buf, length, 0);
 	if (ret < 0) {
-		printf("recv error : %d, ret : %d\n", errno, ret);
 		if (errno == EAGAIN) return ret;
+		if (errno == ECONNRESET) return 0;
+		printf("recv error : %d, ret : %d\n", errno, ret);
 		assert(0);
 	}
 	return ret;
