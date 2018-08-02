@@ -4,6 +4,14 @@ coroutine
 
 ```
 $ make
+```
 
-$ ./nty_server_test
+
+```
+$ ./nty_server
+```
+
+# mul_process, mul_core
+```
+$ ./nty_server_mulcore
 ```
