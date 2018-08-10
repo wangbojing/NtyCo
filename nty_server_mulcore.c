@@ -30,12 +30,24 @@
 static int global_shmid = -1;
 static int global_semid = -1;
 
-static int *global_shmaddr = (int*)-1;
+#define TIME_SUB_MS(tv1, tv2)  ((tv1.tv_sec - tv2.tv_sec) * 1000 + (tv1.tv_usec - tv2.tv_usec) / 1000)
+
+
+typedef struct _shm_area {
+	int total;
+	struct timeval tv_begin;
+} shm_area;
+
+static shm_area *global_shmaddr = NULL;
+
 
 #define MAX_CLIENT_NUM			1000000
 
 
-int get_shmvalue(void);
+struct timeval* get_shm_timevalue(void);
+void set_shm_timevalue(struct timeval *tv);
+
+
 int add_shmvalue(void);
 int sub_shmvalue(void);
 
@@ -127,7 +139,7 @@ void server(void *arg) {
 	local.sin_addr.s_addr = INADDR_ANY;
 	bind(fd, (struct sockaddr*)&local, sizeof(struct sockaddr_in));
 
-	listen(fd, 5);
+	listen(fd, 20);
 	printf("listen port : %d\n", port);
 
 	while (1) {
@@ -139,7 +151,16 @@ void server(void *arg) {
 
 		int value = add_shmvalue();
 		if (value % 1000 == 999) {
-			printf("client sum: %d\n", value);
+			struct timeval *tv_begin = get_shm_timevalue();
+
+			struct timeval tv_cur;
+			memcpy(&tv_cur, tv_begin, sizeof(struct timeval));	
+			gettimeofday(tv_begin, NULL);
+
+			int time_used = TIME_SUB_MS((*tv_begin), tv_cur);
+			
+			
+			printf("client sum: %d, time_used: %d\n", value, time_used);
 		}
 
 	}
@@ -181,8 +202,19 @@ int process_bind(void) {
 }
 
 
-int get_shmvalue(void) {
-	return *global_shmaddr;
+struct timeval* get_shm_timevalue(void) {
+
+	return global_shmaddr ? &global_shmaddr->tv_begin : NULL;
+
+}
+
+void set_shm_timevalue(struct timeval *tv) {
+	if (global_shmaddr == NULL || tv == NULL) {
+		return ;
+	}
+
+	memcpy(&global_shmaddr->tv_begin, tv, sizeof(struct timeval));
+	
 }
 
 int add_shmvalue(void) {
@@ -190,11 +222,13 @@ int add_shmvalue(void) {
 	int ret = -1;
 
 	do {
-		value = *global_shmaddr;
-		ret = cmpxchg(global_shmaddr, (unsigned long)value, (unsigned long)(value+1), 4);
+
+		value = global_shmaddr->total;
+		ret = cmpxchg(&global_shmaddr->total, (unsigned long)value, (unsigned long)(value+1), 4);
+
 	} while (ret != value);
 
-	return *global_shmaddr;
+	return global_shmaddr->total;
 }
 
 int sub_shmvalue(void) {
@@ -202,27 +236,30 @@ int sub_shmvalue(void) {
 	int ret = -1;
 
 	do {
-		value = *global_shmaddr;
-		ret = cmpxchg(global_shmaddr, (unsigned long)value, (unsigned long)(value-1), 4);
+
+		value = global_shmaddr->total;
+		ret = cmpxchg(&global_shmaddr->total, (unsigned long)value, (unsigned long)(value-1), 4);
+
 	} while (ret != value);
 
-	return *global_shmaddr;
+	return global_shmaddr->total;
 }
 
 
 int init_shmvalue(void) {
 	
-	global_shmid = shmget(IPC_PRIVATE, sizeof(int), IPC_CREAT|0600);
+	global_shmid = shmget(IPC_PRIVATE, sizeof(shm_area), IPC_CREAT|0600);
 	if (global_shmid < 0) {
 		perror("shmget failed\n");
 		return -1;
 	}
-	global_shmaddr = (int*)shmat(global_shmid, NULL, 0);
-	if (global_shmaddr == (int*)-1) {
+	global_shmaddr = (shm_area*)shmat(global_shmid, NULL, 0);
+	if (global_shmaddr == (shm_area*)-1) {
 		perror("shmat addr error");
 		return -1;
 	}
-	*global_shmaddr = 0;
+	global_shmaddr->total = 0;
+	gettimeofday(&global_shmaddr->tv_begin, NULL);
 
 }
 
@@ -238,10 +275,9 @@ int main(int argc, char *argv[]) {
 	
 	fork();
 	fork();
-	fork();
+	//fork();
 
 	process_bind();
 
 }
-
 
