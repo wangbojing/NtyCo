@@ -55,11 +55,23 @@ void server(void *arg) {
 	listen(fd, 20);
 	printf("listen port : %d\n", port);
 
+	
+	struct timeval tv_begin;
+	gettimeofday(&tv_begin, NULL);
+
 	while (1) {
 		socklen_t len = sizeof(struct sockaddr_in);
 		int cli_fd = nty_accept(fd, (struct sockaddr*)&remote, &len);
-		if (cli_fd % 1000 == 999)
-			printf("client fd : %d\n", cli_fd);
+		if (cli_fd % 1000 == 999) {
+
+			struct timeval tv_cur;
+			memcpy(&tv_cur, &tv_begin, sizeof(struct timeval));
+			
+			gettimeofday(&tv_begin, NULL);
+			int time_used = TIME_SUB_MS(tv_begin, tv_cur);
+			
+			printf("client fd : %d, time_used: %d\n", cli_fd, time_used);
+		}
 
 		nty_coroutine *read_co;
 		nty_coroutine_create(&read_co, server_reader, &cli_fd);
