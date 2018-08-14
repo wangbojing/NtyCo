@@ -98,21 +98,5 @@ int main(int argc, char *argv[]) {
 	return 0;
 }
 
-//nty_coroutine
-
-// create 
-
-//nty_coroutine *co = NULL;
-//nty_coroutine_create(&co, server, port);
-//pthread_create(thread_id, NULL, server, port);
-
-
-// free
-
-
-// yield  --->
-
-
-// resume
 
 
