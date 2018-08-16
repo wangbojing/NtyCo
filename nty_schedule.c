@@ -340,7 +340,6 @@ void nty_schedule_run(void) {
 			int is_eof = ev->events & EPOLLHUP;
 			if (is_eof) errno = ECONNRESET;
 
-
 			nty_coroutine *co = nty_schedule_search_wait(fd);
 			if (co != NULL) {
 				if (is_eof) {
@@ -351,8 +350,6 @@ void nty_schedule_run(void) {
 
 			is_eof = 0;
 		}
-
-		
 	}
 
 	nty_schedule_free(sched);

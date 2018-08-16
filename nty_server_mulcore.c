@@ -1,3 +1,46 @@
+/*
+ *  Author : WangBoJing , email : 1989wangbojing@gmail.com
+ * 
+ *  Copyright Statement:
+ *  --------------------
+ *  This software is protected by Copyright and the information contained
+ *  herein is confidential. The software may not be copied and the information
+ *  contained herein may not be used or disclosed except with the written
+ *  permission of Author. (C) 2017
+ * 
+ *
+
+****       *****                                      *****
+  ***        *                                       **    ***
+  ***        *         *                            *       **
+  * **       *         *                           **        **
+  * **       *         *                          **          *
+  *  **      *        **                          **          *
+  *  **      *       ***                          **
+  *   **     *    ***********    *****    *****  **                   ****
+  *   **     *        **           **      **    **                 **    **
+  *    **    *        **           **      *     **                 *      **
+  *    **    *        **            *      *     **                **      **
+  *     **   *        **            **     *     **                *        **
+  *     **   *        **             *    *      **               **        **
+  *      **  *        **             **   *      **               **        **
+  *      **  *        **             **   *      **               **        **
+  *       ** *        **              *  *       **               **        **
+  *       ** *        **              ** *        **          *   **        **
+  *        ***        **               * *        **          *   **        **
+  *        ***        **     *         **          *         *     **      **
+  *         **        **     *         **          **       *      **      **
+  *         **         **   *          *            **     *        **    **
+*****        *          ****           *              *****           ****
+                                       *
+                                      *
+                                  *****
+                                  ****
+
+
+
+ *
+ */
 
 
 
@@ -35,6 +78,7 @@ static int global_semid = -1;
 
 typedef struct _shm_area {
 	int total;
+	int lock;
 	struct timeval tv_begin;
 } shm_area;
 
@@ -88,7 +132,24 @@ unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int si
 	return prev;
 }
 
+#define SERVER_STRING "Server: ntyco\r\n"
 
+
+int headers(char *buffer)
+{
+    strcat(buffer, "HTTP/1.0 200 OK\r\n");
+    strcat(buffer, SERVER_STRING);
+    strcat(buffer, "Content-Type: text/html\r\n");
+    strcat(buffer, "\r\n");
+
+	return strlen(buffer);
+}
+
+int body(char *buffer) {
+	strcat(buffer, "<html><h1> coroutine --> ntyco<h1></html>");
+
+	return strlen(buffer);
+}
 
 void server_reader(void *arg) {
 	int fd = *(int *)arg;
@@ -101,11 +162,15 @@ void server_reader(void *arg) {
 
 	while (1) {
 		
-		char buf[100] = {0};
-		ret = nty_recv(fd, buf, 100);
+		char buf[1024] = {0};
+		ret = nty_recv(fd, buf, 1024);
 		if (ret > 0) {
 			if(fd > MAX_CLIENT_NUM) 
-			printf("read from server: %.*s\n", ret, buf);
+				printf("read from server: %.*s\n", ret, buf);
+
+			memset(buf, 0, 1024);
+			int hlen = headers(buf);
+			int blen = body(buf+hlen);
 
 			ret = nty_send(fd, buf, strlen(buf));
 			if (ret == -1) {
@@ -145,6 +210,8 @@ void server(void *arg) {
 	while (1) {
 		socklen_t len = sizeof(struct sockaddr_in);
 		int cli_fd = nty_accept(fd, (struct sockaddr*)&remote, &len);
+
+		printf("new client comming\n");
 		
 		nty_coroutine *read_co;
 		nty_coroutine_create(&read_co, server_reader, &cli_fd);
@@ -173,11 +240,11 @@ int mulcore_entry(int begin_port) {
 
 	int i = 0;
 	unsigned short base_port = begin_port;
-	for (i = 0;i < 10;i ++) {
-		unsigned short *port = calloc(1, sizeof(unsigned short));
-		*port = base_port + i;
-		nty_coroutine_create(&co, server, port); ////////no run
-	}
+	//for (i = 0;i < 10;i ++) {
+	unsigned short *port = calloc(1, sizeof(unsigned short));
+	*port = base_port + i;
+	nty_coroutine_create(&co, server, port); ////////no run
+	//}
 
 	nty_schedule_run(); //run
 
@@ -188,7 +255,7 @@ int process_bind(void) {
 	int num = sysconf(_SC_NPROCESSORS_CONF);
 
 	pid_t self_id = syscall(__NR_gettid);
-	printf("selfid --> %d\n", self_id);
+	//printf("selfid --> %d\n", self_id);
 
 	cpu_set_t mask;
 
@@ -197,7 +264,7 @@ int process_bind(void) {
 
 	sched_setaffinity(0, sizeof(mask), &mask);
 
-	mulcore_entry(9096 + (self_id % num) * 10);
+	mulcore_entry(9096);
 
 }
 
@@ -275,6 +342,8 @@ int main(int argc, char *argv[]) {
 	
 	fork();
 	fork();
+	//fork();
+	//fork();
 	//fork();
 
 	process_bind();
