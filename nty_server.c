@@ -18,8 +18,8 @@ void server_reader(void *arg) {
 
 	while (1) {
 		
-		char buf[100] = {0};
-		ret = nty_recv(fd, buf, 100);
+		char buf[1024] = {0};
+		ret = nty_recv(fd, buf, 1024);
 		if (ret > 0) {
 			if(fd > MAX_CLIENT_NUM) 
 			printf("read from server: %.*s\n", ret, buf);
@@ -72,6 +72,7 @@ void server(void *arg) {
 			
 			printf("client fd : %d, time_used: %d\n", cli_fd, time_used);
 		}
+		printf("new client comming\n");
 
 		nty_coroutine *read_co;
 		nty_coroutine_create(&read_co, server_reader, &cli_fd);

@@ -115,7 +115,7 @@ static void _exec(void *lt) {
 	nty_coroutine *co = (nty_coroutine*)lt;
 	co->func(co->arg);
 	co->status |= BIT(NTY_COROUTINE_STATUS_EXITED);
-#if 0	
+#if 1
 	nty_coroutine_yield(co);
 #else
 	co->ops = 0;
@@ -129,8 +129,16 @@ extern int nty_schedule_create(int stack_size);
 
 void nty_coroutine_free(nty_coroutine *co) {
 	co->sched->spawned_coroutines --;
-	free(co->stack);
-	free(co);
+#if 0
+	if (co->stack) {
+		free(co->stack);
+		co->stack = NULL;
+	}
+#endif
+	if (co) {
+		free(co);
+	}
+
 }
 
 static void nty_coroutine_init(nty_coroutine *co) {
@@ -177,14 +185,15 @@ int nty_coroutine_resume(nty_coroutine *co) {
 	sched->curr_thread = NULL;
 
 	nty_coroutine_madvise(co);
-
+#if 1
 	if (co->status & BIT(NTY_COROUTINE_STATUS_EXITED)) {
 		if (co->status & BIT(NTY_COROUTINE_STATUS_DETACH)) {
+			printf("nty_coroutine_resume --> \n");
 			nty_coroutine_free(co);
 		}
 		return -1;
 	} 
-
+#endif
 	return 0;
 }
 
@@ -253,7 +262,6 @@ int nty_coroutine_create(nty_coroutine **new_co, proc_coroutine func, void *arg)
 		return -2;
 	}
 
-	//
 	int ret = posix_memalign(&co->stack, getpagesize(), sched->stack_size);
 	if (ret) {
 		printf("Failed to allocate stack for new coroutine\n");
