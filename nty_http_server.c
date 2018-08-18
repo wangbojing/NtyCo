@@ -73,7 +73,7 @@
 
 #define ISspace(x) isspace((int)(x))
 
-#define SERVER_STRING "Server: jdbhttpd/0.1.0\r\n"
+#define SERVER_STRING "Server: ntyco_httpd/0.1.0\r\n"
 #define STDIN   0
 #define STDOUT  1
 #define STDERR  2
@@ -126,7 +126,9 @@ int readline(char* allbuf,int level,char* linebuf){
 /**********************************************************************/
 void accept_request(void *arg)
 {
-    int client = (intptr_t)arg;
+    int *pclient = (int*)arg;
+	int client = *pclient;
+	
     char buf[1024];
     size_t numchars;
     char method[255];
@@ -138,10 +140,8 @@ void accept_request(void *arg)
                        * program */
     char *query_string = NULL;
 
-	printf("accept_request\n");
-    numchars = get_line(client, buf, sizeof(buf));
-	printf("accept_request : %s\n", buf);
-	
+    numchars = nty_recv(client, buf, sizeof(buf));
+
     i = 0; j = 0;
     while (!ISspace(buf[i]) && (i < sizeof(method) - 1))
     {
@@ -209,37 +209,9 @@ void accept_request(void *arg)
     }
 
     nty_close(client);
-}
-#if 0
-void accept_request(void *arg) {
-
-	char buffer[MAX_BUFFER_LENGTH];
-	char linebuf[256];
-	int fd = *(int *)arg;
-	int level = 0;
-	char path[512];
-
-	int length = nty_recv(fd, buffer, MAX_BUFFER_LENGTH);
-
-	do {
-		memset(linebuf, 0, sizeof(linebuf));        
-		level = readline(buffer,level,linebuf);
-
-		if (strstr(linebuf,"GET") != NULL)  {
-
-			sprintf(path, "htdocs%s", "index.html");
-			
-		} else if (strstr(linebuf,"POST") != NULL) {
-
-		} else {
-			unimplemented(fd);
-			return ;
-		}
-	} while (0);
-
+	free(pclient);
 }
 
-#endif
 
 /**********************************************************************/
 /* Inform the client that a request it has made has a problem.
@@ -425,17 +397,17 @@ int get_line(int sock, char *buf, int size)
     char c = '\0';
     int n;
 
-	printf("get_line\n");
     while ((i < size - 1) && (c != '\n'))
     {
-        n = recv(sock, &c, 1, 0);
-        printf("%02X\n", c);
+
+		n = recv(sock, &c, 1, 0);
+
         if (n > 0)
         {
             if (c == '\r')
             {
                 n = recv(sock, &c, 1, MSG_PEEK);
-                printf("%02X\n", c); 
+
                 if ((n > 0) && (c == '\n'))
                     recv(sock, &c, 1, 0);
                 else
@@ -511,10 +483,12 @@ void serve_file(int client, const char *filename)
     FILE *resource = NULL;
     int numchars = 1;
     char buf[1024];
-
+	
+#if (ENABLE_NTYCO == 0)
     buf[0] = 'A'; buf[1] = '\0';
     while ((numchars > 0) && strcmp("\n", buf))  /* read & discard headers */
         numchars = get_line(client, buf, sizeof(buf));
+#endif
 
     resource = fopen(filename, "r");
     if (resource == NULL)
@@ -602,7 +576,6 @@ void server(void *arg)
 {
     int server_sock = -1;
     u_short port = 4000;
-    int client_sock = -1;
     struct sockaddr_in client_name;
     socklen_t  client_name_len = sizeof(client_name);
 
@@ -611,18 +584,22 @@ void server(void *arg)
 
     while (1)
     {
-        client_sock = accept(server_sock,
+    	int *client_sock = (int *)malloc(sizeof(int));
+        *client_sock = accept(server_sock,
                 (struct sockaddr *)&client_name,
                 &client_name_len);
-        if (client_sock == -1)
+        if (*client_sock == -1)
             error_die("accept");
         /* accept_request(&client_sock); */
-#if ENABLE_NTYCO 
+#if 1 //ENABLE_NTYCO 
 
-		printf("server\n");
+		printf(" %d.%d.%d.%d:%d clientfd:%d --> New Client Connected \n", 
+			*(unsigned char*)(&client_name.sin_addr.s_addr), *((unsigned char*)(&client_name.sin_addr.s_addr)+1),													
+			*((unsigned char*)(&client_name.sin_addr.s_addr)+2), *((unsigned char*)(&client_name.sin_addr.s_addr)+3),													
+			client_name.sin_port, *client_sock);
 
 		nty_coroutine *read_co;
-		nty_coroutine_create(&read_co, accept_request, &client_sock);
+		nty_coroutine_create(&read_co, accept_request, client_sock);
 
 #else
     	pthread_t newthread;

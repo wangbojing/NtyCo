@@ -69,7 +69,7 @@
 #include "nty_tree.h"
 
 #define NTY_CO_MAX_EVENTS		(1024*1024)
-#define NTY_CO_MAX_STACKSIZE	(4*1024)
+#define NTY_CO_MAX_STACKSIZE	(16*1024) // {http: 16*1024, tcp: 4*1024}
 
 #define BIT(x)	 				(1 << (x))
 #define CLEARBIT(x) 			~(1 << (x))
