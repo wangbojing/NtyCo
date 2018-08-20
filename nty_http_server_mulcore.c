@@ -78,7 +78,7 @@ static int global_semid = -1;
 
 typedef struct _shm_area {
 	int total;
-	int lock;
+	int accept_lock;
 	struct timeval tv_begin;
 } shm_area;
 
@@ -96,6 +96,11 @@ int add_shmvalue(void);
 int sub_shmvalue(void);
 
 int init_shmvalue(void);
+
+int lock_accept_mutex(void);
+int unlock_accept_mutex(void);
+
+
 
 
 unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int size) {
@@ -192,9 +197,9 @@ void accept_request(void *arg)
 	
     char buf[1024];
     size_t numchars;
-    char method[255];
-    char url[255];
-    char path[512];
+    char method[16];
+    char url[32];
+    char path[64];
     size_t i, j;
     struct stat st;
     int cgi = 0;      /* becomes true if server decides this is a CGI
@@ -316,7 +321,7 @@ void bad_request(int client)
 
 void cat(int client, FILE *resource)
 {
-#if 0
+#if ENABLE_NTYCO
     char buf[1024] =  HTML_PAGE;
 
 	send(client, buf, strlen(buf), 0);
@@ -520,16 +525,28 @@ void headers(int client, const char *filename)
 {
     char buf[1024] = {0};
     (void)filename;  /* could use filename to determine file type */
+	
+#if ENABLE_NTYCO
+   
 
-    strcpy(buf, "HTTP/1.0 200 OK\r\n");
-    send(client, buf, strlen(buf), 0);
-    strcpy(buf, SERVER_STRING);
-    send(client, buf, strlen(buf), 0);
-    sprintf(buf, "Content-Type: text/html\r\n");
-    send(client, buf, strlen(buf), 0);
-    strcpy(buf, "\r\n");
-    send(client, buf, strlen(buf), 0);
+	sprintf(buf, "HTTP/1.0 200 OK\r\n");
+	strcat(buf, SERVER_STRING);
+	strcat(buf, "Content-Type: text/html\r\n");
+	strcat(buf, "\r\n");
 
+	send(client, buf, strlen(buf), 0);
+	
+#else
+	strcpy(buf, "HTTP/1.0 200 OK\r\n");
+	send(client, buf, strlen(buf), 0);
+	strcpy(buf, SERVER_STRING);
+	send(client, buf, strlen(buf), 0);
+	sprintf(buf, "Content-Type: text/html\r\n");
+	send(client, buf, strlen(buf), 0);
+	strcpy(buf, "\r\n");
+	send(client, buf, strlen(buf), 0);
+	
+#endif
 }
 
 /**********************************************************************/
@@ -538,7 +555,21 @@ void headers(int client, const char *filename)
 void not_found(int client)
 {
     char buf[1024];
+#if ENABLE_NTYCO
 
+	sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
+	strcat(buf, SERVER_STRING);
+	strcat(buf, "Content-Type: text/html\r\n");
+	strcat(buf, "\r\n");
+	strcat(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+	strcat(buf, "<BODY><P>The server could not fulfill\r\n");
+	strcat(buf, "your request because the resource specified\r\n");
+	strcat(buf, "is unavailable or nonexistent.\r\n");
+	strcat(buf, "</BODY></HTML>\r\n");
+
+	send(client, buf, strlen(buf), 0);
+
+#else
     sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
     send(client, buf, strlen(buf), 0);
     sprintf(buf, SERVER_STRING);
@@ -557,6 +588,7 @@ void not_found(int client)
     send(client, buf, strlen(buf), 0);
     sprintf(buf, "</BODY></HTML>\r\n");
     send(client, buf, strlen(buf), 0);
+#endif
 }
 
 /**********************************************************************/
@@ -638,8 +670,19 @@ int startup(u_short *port)
 void unimplemented(int client)
 {
     char buf[1024];
-
+#if ENABLE_NTYCO
     sprintf(buf, "HTTP/1.0 501 Method Not Implemented\r\n");
+	strcat(buf, SERVER_STRING);
+	strcat(buf, "Content-Type: text/html\r\n");
+	strcat(buf, "\r\n");
+	strcat(buf, "<HTML><HEAD><TITLE>Method Not Implemented\r\n");
+	strcat(buf, "</TITLE></HEAD>\r\n");
+	strcat(buf, "<BODY><P>HTTP request method not supported.\r\n");
+	strcat(buf, "</BODY></HTML>\r\n");
+
+	send(client, buf, strlen(buf), 0);
+#else
+	sprintf(buf, "HTTP/1.0 501 Method Not Implemented\r\n");
     send(client, buf, strlen(buf), 0);
     sprintf(buf, SERVER_STRING);
     send(client, buf, strlen(buf), 0);
@@ -655,6 +698,7 @@ void unimplemented(int client)
     send(client, buf, strlen(buf), 0);
     sprintf(buf, "</BODY></HTML>\r\n");
     send(client, buf, strlen(buf), 0);
+#endif
 }
 
 void server(void *arg) {
@@ -772,6 +816,20 @@ int sub_shmvalue(void) {
 	} while (ret != value);
 
 	return global_shmaddr->total;
+}
+
+int lock_accept_mutex(void) {
+
+	int ret = cmpxchg(&global_shmaddr->accept_lock, (unsigned long)0, (unsigned long)1, 4);
+	
+	return ret; //success 0, failed 1.
+}
+
+int unlock_accept_mutex(void) {
+
+	int ret = cmpxchg(&global_shmaddr->accept_lock, (unsigned long)1, (unsigned long)0, 4);
+	
+	return ret; //unlock 1, lock 0
 }
 
 
