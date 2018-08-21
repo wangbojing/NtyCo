@@ -283,11 +283,16 @@ void nty_coroutine_yield(nty_coroutine *co);
 
 int nty_socket(int domain, int type, int protocol);
 int nty_accept(int fd, struct sockaddr *addr, socklen_t *len);
-int nty_recv(int fd, void *buf, int length);
-int nty_send(int fd, const void *buf, int length);
+ssize_t nty_recv(int fd, void *buf, size_t len, int flags);
+ssize_t nty_send(int fd, const void *buf, size_t len, int flags);
 int nty_close(int fd);
 int nty_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 
+
+ssize_t nty_sendto(int fd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen);
+ssize_t nty_recvfrom(int fd, void *buf, size_t len, int flags,
+                 struct sockaddr *src_addr, socklen_t *addrlen);
 
 
 

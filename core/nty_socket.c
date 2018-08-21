@@ -137,7 +137,7 @@ int nty_accept(int fd, struct sockaddr *addr, socklen_t *len) {
 	while (1) {
 		struct pollfd fds;
 		fds.fd = fd;
-		fds.events = POLLIN;
+		fds.events = POLLIN | POLLERR | POLLHUP;
 		nty_poll_inner(&fds, 1, timeout);
 
 		sockfd = accept(fd, addr, len);
@@ -169,15 +169,42 @@ int nty_accept(int fd, struct sockaddr *addr, socklen_t *len) {
 }
 
 
-int nty_recv(int fd, void *buf, int length) {
+int nty_connect(int fd, struct sockaddr *name, socklen_t namelen) {
+
+	int ret = 0;
+
+	while (1) {
+
+		struct pollfd fds;
+		fds.fd = fd;
+		fds.events = POLLOUT | POLLERR | POLLHUP;
+		nty_poll_inner(&fds, 1, 1);
+
+		ret = connect(fd, name, namelen);
+		if (ret == 0) break;
+
+		if (ret == -1 && (errno == EAGAIN ||
+			errno == EWOULDBLOCK || 
+			errno == EINPROGRESS)) {
+			continue;
+		} else {
+			break;
+		}
+	}
+
+	return ret;
+}
+
+
+ssize_t nty_recv(int fd, void *buf, size_t len, int flags) {
 	
 	struct pollfd fds;
 	fds.fd = fd;
-	fds.events = POLLIN;
+	fds.events = POLLIN | POLLERR | POLLHUP;
 
 	nty_poll_inner(&fds, 1, 1);
 
-	int ret = recv(fd, buf, length, 0);
+	int ret = recv(fd, buf, len, flags);
 	if (ret < 0) {
 		if (errno == EAGAIN) return ret;
 		if (errno == ECONNRESET) return 0;
@@ -188,17 +215,17 @@ int nty_recv(int fd, void *buf, int length) {
 }
 
 
-int nty_send(int fd, const void *buf, int length) {
+ssize_t nty_send(int fd, const void *buf, size_t len, int flags) {
 	
 	int sent = 0;
 
-	while (sent < length) {
+	while (sent < len) {
 		struct pollfd fds;
 		fds.fd = fd;
-		fds.events = POLLOUT;
+		fds.events = POLLOUT | POLLERR | POLLHUP;
 
 		nty_poll_inner(&fds, 1, 1);
-		int ret = send(fd, ((char*)buf)+sent, length-sent, 0);
+		int ret = send(fd, ((char*)buf)+sent, len-sent, flags);
 		if (ret <= 0) {
 			if (errno == EAGAIN) continue;
 			else if (errno == ECONNRESET) {
@@ -209,7 +236,59 @@ int nty_send(int fd, const void *buf, int length) {
 		}
 		sent += ret;
 	}
+	return sent;
 }
+
+
+ssize_t nty_sendto(int fd, const void *buf, size_t len, int flags,
+               const struct sockaddr *dest_addr, socklen_t addrlen) {
+
+
+	int sent = 0;
+
+	while (sent < len) {
+		struct pollfd fds;
+		fds.fd = fd;
+		fds.events = POLLOUT | POLLERR | POLLHUP;
+
+		nty_poll_inner(&fds, 1, 1);
+		int ret = sendto(fd, ((char*)buf)+sent, len-sent, flags, dest_addr, addrlen);
+		if (ret <= 0) {
+			if (errno == EAGAIN) continue;
+			else if (errno == ECONNRESET) {
+				return ret;
+			}
+			printf("send errno : %d, ret : %d\n", errno, ret);
+			assert(0);
+		}
+		sent += ret;
+	}
+	return sent;
+	
+}
+
+ssize_t nty_recvfrom(int fd, void *buf, size_t len, int flags,
+                 struct sockaddr *src_addr, socklen_t *addrlen) {
+
+	struct pollfd fds;
+	fds.fd = fd;
+	fds.events = POLLIN | POLLERR | POLLHUP;
+
+	nty_poll_inner(&fds, 1, 1);
+
+	int ret = recvfrom(fd, buf, len, flags, src_addr, addrlen);
+	if (ret < 0) {
+		if (errno == EAGAIN) return ret;
+		if (errno == ECONNRESET) return 0;
+		
+		printf("recv error : %d, ret : %d\n", errno, ret);
+		assert(0);
+	}
+	return ret;
+
+}
+
+
 
 
 int nty_close(int fd) {
@@ -224,4 +303,6 @@ int nty_close(int fd) {
 	
 	return close(fd);
 }
+
+
 

@@ -163,7 +163,7 @@ void server_reader(void *arg) {
 	while (1) {
 		
 		char buf[1024] = {0};
-		ret = nty_recv(fd, buf, 1024);
+		ret = nty_recv(fd, buf, 1024, 0);
 		if (ret > 0) {
 			if(fd > MAX_CLIENT_NUM) 
 				printf("read from server: %.*s\n", ret, buf);
@@ -172,7 +172,7 @@ void server_reader(void *arg) {
 			int hlen = headers(buf);
 			int blen = body(buf+hlen);
 
-			ret = nty_send(fd, buf, strlen(buf));
+			ret = nty_send(fd, buf, strlen(buf), 0);
 			if (ret == -1) {
 				nty_close(fd);
 				sub_shmvalue();

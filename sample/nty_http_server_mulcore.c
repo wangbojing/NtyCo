@@ -151,8 +151,8 @@ unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int si
 
 #define socket 	nty_socket 
 #define accept 	nty_accept 
-#define recv(a, b, c, d) 	nty_recv(a, b, c)
-#define send(a, b, c, d) 	nty_send(a, b, c) 
+#define recv(a, b, c, d) 	nty_recv(a, b, c, d)
+#define send(a, b, c, d) 	nty_send(a, b, c, d) 
 
 #define MAX_BUFFER_LENGTH	1024
 
@@ -206,7 +206,7 @@ void accept_request(void *arg)
                        * program */
     char *query_string = NULL;
 
-    numchars = nty_recv(client, buf, sizeof(buf));
+    numchars = nty_recv(client, buf, sizeof(buf), 0);
 
     i = 0; j = 0;
     while (!ISspace(buf[i]) && (i < sizeof(method) - 1))
@@ -454,7 +454,7 @@ void execute_cgi(int client, const char *path,
 
 				recv(client, &c, 1, 0);
 
-                write(cgi_input[1], &c, 1);
+                int len = write(cgi_input[1], &c, 1);
             }
         while (read(cgi_output[0], &c, 1) > 0)
 

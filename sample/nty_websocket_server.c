@@ -218,7 +218,7 @@ void server_reader(void *arg) {
 	while (1) {
 		
 		char stream[MAX_BUFFER_LENGTH] = {0};
-		length = nty_recv(fd, stream, MAX_BUFFER_LENGTH);
+		length = nty_recv(fd, stream, MAX_BUFFER_LENGTH, 0);
 		if (length > 0) {
 			if(fd > MAX_CLIENT_NUM) 
 				printf("read from server: %.*s\n", length, stream);
@@ -231,7 +231,7 @@ void server_reader(void *arg) {
 #if 1					
 			char buffer[MAX_BUFFER_LENGTH+14] = {0};
 			ret = encode_packet(buffer, mask, data, ret);
-			ret = nty_send(fd, buffer, ret);
+			ret = nty_send(fd, buffer, ret, 0);
 #endif	
 		} else if (length == 0) {	
 			nty_close(fd);
