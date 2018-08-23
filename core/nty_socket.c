@@ -206,10 +206,10 @@ ssize_t nty_recv(int fd, void *buf, size_t len, int flags) {
 
 	int ret = recv(fd, buf, len, flags);
 	if (ret < 0) {
-		if (errno == EAGAIN) return ret;
-		if (errno == ECONNRESET) return 0;
+		//if (errno == EAGAIN) return ret;
+		//if (errno == ECONNRESET) return 0;
 		printf("recv error : %d, ret : %d\n", errno, ret);
-		assert(0);
+		
 	}
 	return ret;
 }
@@ -219,23 +219,26 @@ ssize_t nty_send(int fd, const void *buf, size_t len, int flags) {
 	
 	int sent = 0;
 
+	int ret = send(fd, ((char*)buf)+sent, len-sent, flags);
+	if (ret == 0) return ret;
+	if (ret > 0) sent += ret;
+
 	while (sent < len) {
 		struct pollfd fds;
 		fds.fd = fd;
 		fds.events = POLLOUT | POLLERR | POLLHUP;
 
 		nty_poll_inner(&fds, 1, 1);
-		int ret = send(fd, ((char*)buf)+sent, len-sent, flags);
-		if (ret <= 0) {
-			if (errno == EAGAIN) continue;
-			else if (errno == ECONNRESET) {
-				return ret;
-			}
-			printf("send errno : %d, ret : %d\n", errno, ret);
-			assert(0);
+		ret = send(fd, ((char*)buf)+sent, len-sent, flags);
+		//printf("send --> len : %d\n", ret);
+		if (ret <= 0) {			
+			break;
 		}
 		sent += ret;
 	}
+
+	if (ret <= 0 && sent == 0) return ret;
+	
 	return sent;
 }
 
@@ -292,7 +295,7 @@ ssize_t nty_recvfrom(int fd, void *buf, size_t len, int flags,
 
 
 int nty_close(int fd) {
-
+#if 0
 	nty_schedule *sched = nty_coroutine_get_sched();
 
 	nty_coroutine *co = sched->curr_thread;
@@ -300,7 +303,7 @@ int nty_close(int fd) {
 		TAILQ_INSERT_TAIL(&nty_coroutine_get_sched()->ready, co, ready_next);
 		co->status |= BIT(NTY_COROUTINE_STATUS_FDEOF);
 	}
-	
+#endif	
 	return close(fd);
 }
 
