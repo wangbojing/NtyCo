@@ -2,17 +2,28 @@
 
 #### coroutine
 [实现原理](https://github.com/wangbojing/NtyCo/wiki/NtyCo%E7%9A%84%E5%AE%9E%E7%8E%B0)
+
+coroutine FSM
 ![](http://bojing.wang/wp-content/uploads/2018/08/status_machine.png)
+
+storage structure (ready, wait, sleep, status)
 ![](http://bojing.wang/wp-content/uploads/2018/08/6.1.png)
 
+
+#### compile
 
 ```
 $ make
 ```
 
 
+#### server 
 ```
 $ ./bin/nty_server
+```
+#### client
+```
+./bin/nty_client
 ```
 
 #### mul_process, mul_core
