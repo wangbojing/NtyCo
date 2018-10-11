@@ -8,7 +8,7 @@
 ## [目录](http://ntycobook.ntytcp.com/index.html)
 * [前言](http://ntycobook.ntytcp.com/charpter0/index.html)
 * [第一章 协程的起源](http://ntycobook.ntytcp.com/chapter1/1_0.html)
-* [第二章 协程的案例](http://ntycobook.ntytcp.com/index.html)
+* [第二章 协程的案例](http://ntycobook.ntytcp.com/chapter2/2_0.html)
 * [第三章 协程的实现之工作原理](http://ntycobook.ntytcp.com/index.html)
     * [创建协程](http://ntycobook.ntytcp.com/index.html)
     * [实现IO异步操作](http://ntycobook.ntytcp.com/index.html)
