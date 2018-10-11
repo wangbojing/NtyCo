@@ -71,3 +71,11 @@ $ ./bin/nty_http_server_mulcore
 ```
 
 ![](http://bojing.wang/wp-content/uploads/2018/08/ntyco_ab.png)![](http://bojing.wang/wp-content/uploads/2018/08/nginx_ab.png)
+
+##  鸣谢
+在此要特别感谢我们的团队的每一位成员的努力，也特别感谢背后默默支持我们的家人们。如果你有任何疑问，或者想和我们探讨技术请联系我们：
+
+email: 1989wangbojing@163.com  
+email: lizhiyong4360@gmail.com  
+email: 592407834@qq.com  
+qq群: 829348971
