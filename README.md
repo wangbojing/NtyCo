@@ -1,9 +1,7 @@
 ## NtyCo
 
 #### coroutine
-[实现原理](https://github.com/wangbojing/NtyCo/wiki/NtyCo%E7%9A%84%E5%AE%9E%E7%8E%B0)
-  
-或者e-book：[NtyCo实现原理](http://ntycobook.ntytcp.com/)
+e-book：[NtyCo实现原理](http://ntycobook.ntytcp.com/)
 
 ## [目录](http://ntycobook.ntytcp.com/index.html)
 * [前言](http://ntycobook.ntytcp.com/charpter0/index.html)
