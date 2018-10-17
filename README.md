@@ -1,7 +1,7 @@
 ## NtyCo
 
-#### coroutine
-e-book：[NtyCo实现原理](http://ntycobook.ntytcp.com/)
+#### introduction
+[NtyCo实现原理](http://ntycobook.ntytcp.com/)
 
 ## [目录](http://ntycobook.ntytcp.com/index.html)
 * [前言](http://ntycobook.ntytcp.com/charpter0/index.html)
@@ -21,13 +21,6 @@ e-book：[NtyCo实现原理](http://ntycobook.ntytcp.com/)
     * [多状态下运行](http://ntycobook.ntytcp.com/chapter7/7_0.html)
 * [第八章 协程性能测试](http://ntycobook.ntytcp.com/chapter8/8_0.html)
 * [第九章 协程多核模式](http://ntycobook.ntytcp.com/chapter9/9_0.html)
-
-## details
-#### coroutine FSM
-![](http://bojing.wang/wp-content/uploads/2018/08/status_machine.png)
-
-#### storage structure (ready, wait, sleep, status)
-![](http://bojing.wang/wp-content/uploads/2018/08/6.1.png)
 
 
 #### compile
