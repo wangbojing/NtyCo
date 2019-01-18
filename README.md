@@ -65,7 +65,5 @@ $ ./bin/nty_http_server_mulcore
 
 
 ### email: 1989wangbojing@163.com  
-### 捐赠：
 
-<img src="http://bojing.wang/wp-content/uploads/2019/01/wx_pay.jpg" width = 30% height = 30% />
 
