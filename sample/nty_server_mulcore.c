@@ -226,7 +226,6 @@ void server(void *arg) {
 
 			int time_used = TIME_SUB_MS((*tv_begin), tv_cur);
 			
-			
 			printf("client sum: %d, time_used: %d\n", value, time_used);
 		}
 

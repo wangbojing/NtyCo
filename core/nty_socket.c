@@ -126,8 +126,14 @@ int nty_socket(int domain, int type, int protocol) {
 		close(ret);
 		return -1;
 	}
+	int reuse = 1;
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+	
 	return fd;
 }
+
+//nty_accept 
+//return failed == -1, success > 0
 
 int nty_accept(int fd, struct sockaddr *addr, socklen_t *len) {
 	int sockfd = -1;
@@ -141,20 +147,16 @@ int nty_accept(int fd, struct sockaddr *addr, socklen_t *len) {
 		nty_poll_inner(&fds, 1, timeout);
 
 		sockfd = accept(fd, addr, len);
-		if (sockfd <= 0) {
-			if (errno == ENFILE || 
-				errno == EWOULDBLOCK ||
-				errno == EMFILE) {
-				timeout *= 2;
-				if (timeout >= 1024) timeout = 1024;
+		if (sockfd < 0) {
+			if (errno == EAGAIN) {
 				continue;
 			} else if (errno == ECONNABORTED) {
-				printf("Cannot accept connection\n");
-				continue;
-			} else {
-				printf("Cannot accept connection\n");
-				return -1;
+				printf("accept : ECONNABORTED\n");
+				
+			} else if (errno == EMFILE || errno == ENFILE) {
+				printf("accept : EMFILE || ENFILE\n");
 			}
+			return -1;
 		} else {
 			break;
 		}
@@ -165,6 +167,9 @@ int nty_accept(int fd, struct sockaddr *addr, socklen_t *len) {
 		close(sockfd);
 		return -1;
 	}
+	int reuse = 1;
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+	
 	return sockfd;
 }
 
@@ -195,7 +200,9 @@ int nty_connect(int fd, struct sockaddr *name, socklen_t namelen) {
 	return ret;
 }
 
-
+//recv 
+// add epoll first
+//
 ssize_t nty_recv(int fd, void *buf, size_t len, int flags) {
 	
 	struct pollfd fds;
@@ -207,8 +214,8 @@ ssize_t nty_recv(int fd, void *buf, size_t len, int flags) {
 	int ret = recv(fd, buf, len, flags);
 	if (ret < 0) {
 		//if (errno == EAGAIN) return ret;
-		//if (errno == ECONNRESET) return 0;
-		printf("recv error : %d, ret : %d\n", errno, ret);
+		if (errno == ECONNRESET) return -1;
+		//printf("recv error : %d, ret : %d\n", errno, ret);
 		
 	}
 	return ret;

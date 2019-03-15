@@ -279,6 +279,7 @@ void nty_coroutine_free(nty_coroutine *co);
 int nty_coroutine_create(nty_coroutine **new_co, proc_coroutine func, void *arg);
 void nty_coroutine_yield(nty_coroutine *co);
 
+void nty_coroutine_sleep(uint64_t msecs);
 
 
 int nty_socket(int domain, int type, int protocol);

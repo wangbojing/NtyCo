@@ -153,6 +153,7 @@ unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int si
 #define accept 	nty_accept 
 #define recv(a, b, c, d) 	nty_recv(a, b, c, d)
 #define send(a, b, c, d) 	nty_send(a, b, c, d) 
+#define close(a)	nty_close(a)
 
 #define MAX_BUFFER_LENGTH	1024
 
@@ -206,7 +207,7 @@ void accept_request(void *arg)
                        * program */
     char *query_string = NULL;
 
-    numchars = nty_recv(client, buf, sizeof(buf), 0);
+    numchars = recv(client, buf, sizeof(buf), 0);
 
     i = 0; j = 0;
     while (!ISspace(buf[i]) && (i < sizeof(method) - 1))
@@ -274,7 +275,7 @@ void accept_request(void *arg)
             execute_cgi(client, path, method, query_string);
     }
 
-    nty_close(client);
+    close(client);
 	free(pclient);
 }
 
@@ -608,9 +609,7 @@ void serve_file(int client, const char *filename)
     buf[0] = 'A'; buf[1] = '\0';
     while ((numchars > 0) && strcmp("\n", buf))  /* read & discard headers */
         numchars = get_line(client, buf, sizeof(buf));
-#endif
-
-    resource = fopen(filename, "r");
+	resource = fopen(filename, "r");
     if (resource == NULL)
         not_found(client);
     else
@@ -619,6 +618,12 @@ void serve_file(int client, const char *filename)
         cat(client, resource);
     }
     fclose(resource);
+#else
+	headers(client, filename);
+    cat(client, resource);
+#endif
+
+    
 }
 
 /**********************************************************************/
@@ -718,7 +723,6 @@ void server(void *arg) {
 	bind(fd, (struct sockaddr*)&local, sizeof(struct sockaddr_in));
 
 	listen(fd, 20);
-	printf("listen port : %d\n", port);
 
 	while (1) {
 		int *client_sock = (int *)malloc(sizeof(int));
@@ -728,12 +732,12 @@ void server(void *arg) {
         if (*client_sock == -1)
             error_die("accept");
         /* accept_request(&client_sock); */
-
+#if 0
 		printf(" %d.%d.%d.%d:%d clientfd:%d --> New Client Connected \n", 
 			*(unsigned char*)(&client_name.sin_addr.s_addr), *((unsigned char*)(&client_name.sin_addr.s_addr)+1),													
 			*((unsigned char*)(&client_name.sin_addr.s_addr)+2), *((unsigned char*)(&client_name.sin_addr.s_addr)+3),													
 			client_name.sin_port, *client_sock);
-
+#endif
 		nty_coroutine *read_co;
 		nty_coroutine_create(&read_co, accept_request, client_sock);
 	}
@@ -859,14 +863,25 @@ int main(int argc, char *argv[]) {
 		printf("init share memory failed\n");
 		return -1;
 	}
-	
-	fork();
-	fork();
-	//fork();
-	//fork();
-	//fork();
 
-	process_bind();
+	int num = sysconf(_SC_NPROCESSORS_CONF);
+	int i = 0;
+	pid_t pid=0;
+	for(i = 0;i < num;i ++) {
+		pid=fork();
+		if(pid <= (pid_t) 0)
+		{
+		   usleep(1);
+		   break;
+		}
+  	}
+
+	if (pid > 0) {
+		printf("ntyco_httpd server running ...\n");
+		getchar();
+	} else if (pid == 0) {
+		process_bind();
+	}
 
 }
 

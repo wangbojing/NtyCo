@@ -1,26 +1,15 @@
 ## NtyCo
 
-#### introduction
-[NtyCo实现原理](http://ntycobook.ntytcp.com/)
+#### coroutine
+[实现原理](https://github.com/wangbojing/NtyCo/wiki/NtyCo%E7%9A%84%E5%AE%9E%E7%8E%B0)
 
-## [目录](http://ntycobook.ntytcp.com/index.html)
-* [前言](http://ntycobook.ntytcp.com/charpter0/index.html)
-* [第一章 协程的起源](http://ntycobook.ntytcp.com/chapter1/1_0.html)
-* [第二章 协程的案例](http://ntycobook.ntytcp.com/chapter2/2_0.html)
-* [第三章 协程的实现之工作原理](http://ntycobook.ntytcp.com/chapter3/3_0.html)
-    * [创建协程](http://ntycobook.ntytcp.com/chapter3/3_0.html)
-    * [实现IO异步操作](http://ntycobook.ntytcp.com/chapter3/3_0.html)
-    * [回调协程的子操作](http://ntycobook.ntytcp.com/chapter3/3_0.html)
-* [第四章 协程的实现之原语操作](http://ntycobook.ntytcp.com/chapter4/4_0.html)
-* [第五章 协程实现之切换](http://ntycobook.ntytcp.com/chapter5/5_0.html)
-* [第六章 协程实现之定义](http://ntycobook.ntytcp.com/chapter6/6_0.html)
-    * [运行体高效切换](http://ntycobook.ntytcp.com/chapter6/6_0.html)
-    * [调度器与协程的功能界限](http://ntycobook.ntytcp.com/chapter6/6_0.html)
-* [第七章 协程实现之调度器](http://ntycobook.ntytcp.com/chapter7/7_0.html)
-    * [生产者消费者模式](http://ntycobook.ntytcp.com/chapter7/7_0.html)
-    * [多状态下运行](http://ntycobook.ntytcp.com/chapter7/7_0.html)
-* [第八章 协程性能测试](http://ntycobook.ntytcp.com/chapter8/8_0.html)
-* [第九章 协程多核模式](http://ntycobook.ntytcp.com/chapter9/9_0.html)
+
+## details
+#### coroutine FSM
+![](http://bojing.wang/wp-content/uploads/2018/08/status_machine.png)
+
+#### storage structure (ready, wait, sleep, status)
+![](http://bojing.wang/wp-content/uploads/2018/08/6.1.png)
 
 
 #### compile
@@ -62,8 +51,3 @@ $ ./bin/nty_http_server_mulcore
 ```
 
 ![](http://bojing.wang/wp-content/uploads/2018/08/ntyco_ab.png)![](http://bojing.wang/wp-content/uploads/2018/08/nginx_ab.png)
-
-
-### email: 1989wangbojing@163.com  
-
-
