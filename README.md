@@ -11,6 +11,8 @@
 #### storage structure (ready, wait, sleep, status)
 ![](http://bojing.wang/wp-content/uploads/2018/08/6.1.png)
 
+#### nty_server process
+![](http://bojing.wang/wp-content/uploads/2019/03/nty_server_uml.jpg)
 
 #### compile
 
