@@ -114,7 +114,7 @@ static void _exec(void *lt) {
 
 	nty_coroutine *co = (nty_coroutine*)lt;
 	co->func(co->arg);
-	co->status |= BIT(NTY_COROUTINE_STATUS_EXITED);
+	co->status |= (BIT(NTY_COROUTINE_STATUS_EXITED) | BIT(NTY_COROUTINE_STATUS_FDEOF) | BIT(NTY_COROUTINE_STATUS_DETACH));
 #if 1
 	nty_coroutine_yield(co);
 #else
@@ -128,8 +128,9 @@ extern int nty_schedule_create(int stack_size);
 
 
 void nty_coroutine_free(nty_coroutine *co) {
+	if (co == NULL) return ;
 	co->sched->spawned_coroutines --;
-#if 0
+#if 1
 	if (co->stack) {
 		free(co->stack);
 		co->stack = NULL;
