@@ -54,4 +54,4 @@ $ ./bin/nty_http_server_mulcore
 
 ![](http://bojing.wang/wp-content/uploads/2018/08/ntyco_ab.png)![](http://bojing.wang/wp-content/uploads/2018/08/nginx_ab.png)
 
-##### 协程技术交流群：829348971
+##### [对应视频讲解](https://ke.qq.com/course/2705727?tuin=1bf84273)
