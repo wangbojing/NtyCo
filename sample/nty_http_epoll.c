@@ -131,8 +131,7 @@ unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int si
 	return prev;
 }
 
-
-inline int atomic_add(volatile int *value, int add)
+int atomic_add(volatile int *value, int add)
 {
     __asm__ volatile (
 
@@ -144,7 +143,7 @@ inline int atomic_add(volatile int *value, int add)
     return add;
 }
 
-inline int atomic_sub(volatile int *value, int sub)
+int atomic_sub(volatile int *value, int sub)
 {
     __asm__ volatile (
 
