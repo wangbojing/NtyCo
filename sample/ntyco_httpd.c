@@ -136,7 +136,7 @@ unsigned long cmpxchg(void *addr, unsigned long _old, unsigned long _new, int si
 }
 
 
-inline int atomic_add(volatile int *value, int add)
+int atomic_add(volatile int *value, int add)
 {
     __asm__ volatile (
 
@@ -148,7 +148,7 @@ inline int atomic_add(volatile int *value, int add)
     return add;
 }
 
-inline int atomic_sub(volatile int *value, int sub)
+int atomic_sub(volatile int *value, int sub)
 {
     __asm__ volatile (
 
@@ -495,7 +495,7 @@ int main(int argc, char *argv[]) {
 	socklen_t  client_name_len = sizeof(client_name);
 
 	int fd = nty_socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < 0) return ;
+	if (fd < 0) return -1;
 
 	struct sockaddr_in local, remote;
 	local.sin_family = AF_INET;
