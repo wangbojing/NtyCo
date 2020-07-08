@@ -696,7 +696,7 @@ int main(int argc, char *argv[]) {
 	socklen_t  client_name_len = sizeof(client_name);
 
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (fd < 0) return ;
+	if (fd < 0) return -1;
 
     ntySetNonblock(fd);
     ntySetReUseAddr(fd);

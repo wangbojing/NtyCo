@@ -52,9 +52,11 @@
 #include <unistd.h>
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/sysinfo.h>
 #include <sys/syscall.h>
 
+#include <sys/stat.h>
 #include <sys/ipc.h>
 #include <sys/shm.h>
 #include <sys/sem.h>
@@ -801,7 +803,8 @@ int add_shmvalue(void) {
 	do {
 
 		value = global_shmaddr->total;
-		ret = cmpxchg(&global_shmaddr->total, (unsigned long)value, (unsigned long)(value+1), 4);
+		ret = cmpxchg(&global_shmaddr->total, (unsigned long)value, (unsigned long)(value+1), 4);
+
 
 	} while (ret != value);
 
@@ -815,7 +818,8 @@ int sub_shmvalue(void) {
 	do {
 
 		value = global_shmaddr->total;
-		ret = cmpxchg(&global_shmaddr->total, (unsigned long)value, (unsigned long)(value-1), 4);
+		ret = cmpxchg(&global_shmaddr->total, (unsigned long)value, (unsigned long)(value-1), 4);
+
 
 	} while (ret != value);
 

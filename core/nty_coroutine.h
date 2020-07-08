@@ -272,6 +272,8 @@ void nty_schedule_sched_sleepdown(nty_coroutine *co, uint64_t msecs);
 nty_coroutine* nty_schedule_desched_wait(int fd);
 void nty_schedule_sched_wait(nty_coroutine *co, int fd, unsigned short events, uint64_t timeout);
 
+void nty_schedule_run(void);
+
 int nty_epoller_ev_register_trigger(void);
 int nty_epoller_wait(struct timespec t);
 int nty_coroutine_resume(nty_coroutine *co);
@@ -288,7 +290,7 @@ ssize_t nty_recv(int fd, void *buf, size_t len, int flags);
 ssize_t nty_send(int fd, const void *buf, size_t len, int flags);
 int nty_close(int fd);
 int nty_poll(struct pollfd *fds, nfds_t nfds, int timeout);
-
+int nty_connect(int fd, struct sockaddr *name, socklen_t namelen);
 
 ssize_t nty_sendto(int fd, const void *buf, size_t len, int flags,
                const struct sockaddr *dest_addr, socklen_t addrlen);
