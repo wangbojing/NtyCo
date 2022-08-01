@@ -47,6 +47,7 @@
 pthread_key_t global_sched_key;
 static pthread_once_t sched_key_once = PTHREAD_ONCE_INIT;
 
+// https://github.com/halayli/lthread/blob/master/src/lthread.c#L58
 
 int _switch(nty_cpu_ctx *new_ctx, nty_cpu_ctx *cur_ctx);
 
