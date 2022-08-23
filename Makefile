@@ -8,7 +8,7 @@ OBJS_DIR = $(ROOT_DIR)/objs
 BIN_DIR = $(ROOT_DIR)/bin
 
 BIN = nty_server nty_client nty_bench nty_server_mulcore nty_http_server nty_websocket_server nty_http_server_mulcore ntyco_httpd
-FLAG = -lpthread -O3 -lcrypto -lssl -I $(ROOT_DIR)/core 
+FLAG = -lpthread -O3  -lcrypto -lssl -lmysqlclient -ldl -I $(ROOT_DIR)/core  -I /usr/include/mysql/
 
 CUR_SOURCE = ${wildcard *.c}
 CUR_OBJS = ${patsubst %.c, %.o, %(CUR_SOURCE)}
@@ -46,6 +46,12 @@ nty_http_server : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DI
 
 nty_websocket_server : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_websocket_server.o
 	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG) 
+	
+nty_mysql_client : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_mysql_client.o
+	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG)
+
+nty_mysql_oper : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_mysql_oper.o
+	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG)	
 
 nty_http_server_mulcore : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_http_server_mulcore.o
 	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG) 
