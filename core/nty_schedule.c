@@ -228,7 +228,7 @@ int nty_schedule_create(int stack_size) {
 	sched->birth = nty_coroutine_usec_now();
 
 	TAILQ_INIT(&sched->ready);
-	//TAILQ_INIT(&sched->defer);
+	TAILQ_INIT(&sched->defer);
 	LIST_INIT(&sched->busy);
 
 	bzero(&sched->ctx, sizeof(nty_cpu_ctx));

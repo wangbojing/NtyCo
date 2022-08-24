@@ -85,6 +85,11 @@ static int nty_poll_inner(struct pollfd *fds, nfds_t nfds, int timeout) {
 	}
 
 	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		printf("scheduler not exit!\n");
+		return -1;
+	}
+	
 	nty_coroutine *co = sched->curr_thread;
 	
 	int i = 0;
@@ -313,6 +318,329 @@ int nty_close(int fd) {
 #endif	
 	return close(fd);
 }
+
+
+#ifdef  COROUTINE_HOOK
+
+socket_t socket_f = NULL;
+
+read_t read_f = NULL;
+recv_t recv_f = NULL;
+recvfrom_t recvfrom_f = NULL;
+
+write_t write_f = NULL;
+send_t send_f = NULL;
+sendto_t sendto_f = NULL;
+
+accept_t accept_f = NULL;
+close_t close_f = NULL;
+connect_t connect_f = NULL;
+
+
+int init_hook(void) {
+
+	socket_f = (socket_t)dlsym(RTLD_NEXT, "socket");
+	
+	//read_f = (read_t)dlsym(RTLD_NEXT, "read");
+	recv_f = (recv_t)dlsym(RTLD_NEXT, "recv");
+	recvfrom_f = (recvfrom_t)dlsym(RTLD_NEXT, "recvfrom");
+
+	//write_f = (write_t)dlsym(RTLD_NEXT, "write");
+	send_f = (send_t)dlsym(RTLD_NEXT, "send");
+    sendto_f = (sendto_t)dlsym(RTLD_NEXT, "sendto");
+
+	accept_f = (accept_t)dlsym(RTLD_NEXT, "accept");
+	close_f = (close_t)dlsym(RTLD_NEXT, "close");
+	connect_f = (connect_t)dlsym(RTLD_NEXT, "connect");
+
+}
+
+
+
+int socket(int domain, int type, int protocol) {
+
+	if (!socket_f) init_hook();
+
+	int fd = socket_f(domain, type, protocol);
+	if (fd == -1) {
+		printf("Failed to create a new socket\n");
+		return -1;
+	}
+	int ret = fcntl(fd, F_SETFL, O_NONBLOCK);
+	if (ret == -1) {
+		close(ret);
+		return -1;
+	}
+	int reuse = 1;
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+	
+	return fd;
+}
+/*
+ssize_t read(int fd, void *buf, size_t count) {
+
+	if (!read_f) init_hook();
+
+	printf("read\n");
+	
+	struct pollfd fds;
+	fds.fd = fd;
+	fds.events = POLLIN | POLLERR | POLLHUP;
+
+	nty_poll_inner(&fds, 1, 1);
+
+	int ret = read_f(fd, buf, count);
+	if (ret < 0) {
+		//if (errno == EAGAIN) return ret;
+		if (errno == ECONNRESET) return -1;
+		//printf("recv error : %d, ret : %d\n", errno, ret);
+		
+	}
+	return ret;
+}
+*/
+ssize_t recv(int fd, void *buf, size_t len, int flags) {
+
+	if (!recv_f) init_hook();
+
+	printf("recv\n");
+	
+	struct pollfd fds;
+	fds.fd = fd;
+	fds.events = POLLIN | POLLERR | POLLHUP;
+
+	nty_poll_inner(&fds, 1, 1);
+
+	int ret = recv_f(fd, buf, len, flags);
+	if (ret < 0) {
+		//if (errno == EAGAIN) return ret;
+		if (errno == ECONNRESET) return -1;
+		//printf("recv error : %d, ret : %d\n", errno, ret);
+		
+	}
+	return ret;
+}
+
+
+ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
+                 struct sockaddr *src_addr, socklen_t *addrlen) {
+
+	if (!recvfrom_f) init_hook();
+
+	printf("recvfrom\n");
+
+	struct pollfd fds;
+	fds.fd = fd;
+	fds.events = POLLIN | POLLERR | POLLHUP;
+
+	nty_poll_inner(&fds, 1, 1);
+
+	int ret = recvfrom_f(fd, buf, len, flags, src_addr, addrlen);
+	if (ret < 0) {
+		if (errno == EAGAIN) return ret;
+		if (errno == ECONNRESET) return 0;
+		
+		printf("recv error : %d, ret : %d\n", errno, ret);
+		assert(0);
+	}
+	return ret;
+
+}
+
+/*
+ssize_t write(int fd, const void *buf, size_t count) {
+
+	if (!write_f) init_hook();
+
+	printf("write\n");
+	
+	int sent = 0;
+
+	int ret = write_f(fd, ((char*)buf)+sent, count-sent);
+	if (ret == 0) return ret;
+	if (ret > 0) sent += ret;
+
+	while (sent < count) {
+		struct pollfd fds;
+		fds.fd = fd;
+		fds.events = POLLOUT | POLLERR | POLLHUP;
+
+		nty_poll_inner(&fds, 1, 1);
+		ret = write_f(fd, ((char*)buf)+sent, count-sent);
+		//printf("send --> len : %d\n", ret);
+		if (ret <= 0) {			
+			break;
+		}
+		sent += ret;
+	}
+
+	if (ret <= 0 && sent == 0) return ret;
+	
+	return sent;
+}
+*/
+
+ssize_t send(int fd, const void *buf, size_t len, int flags) {
+
+	if (!send_f) init_hook();
+
+	printf("send\n");
+	
+	int sent = 0;
+
+	int ret = send_f(fd, ((char*)buf)+sent, len-sent, flags);
+	if (ret == 0) return ret;
+	if (ret > 0) sent += ret;
+
+	while (sent < len) {
+		struct pollfd fds;
+		fds.fd = fd;
+		fds.events = POLLOUT | POLLERR | POLLHUP;
+
+		nty_poll_inner(&fds, 1, 1);
+		ret = send_f(fd, ((char*)buf)+sent, len-sent, flags);
+		//printf("send --> len : %d\n", ret);
+		if (ret <= 0) {			
+			break;
+		}
+		sent += ret;
+	}
+
+	if (ret <= 0 && sent == 0) return ret;
+	
+	return sent;
+}
+
+ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
+        const struct sockaddr *dest_addr, socklen_t addrlen) {
+
+	if (!sendto_f) init_hook();
+
+	printf("sendto\n");
+	
+	struct pollfd fds;
+	fds.fd = sockfd;
+	fds.events = POLLOUT | POLLERR | POLLHUP;
+
+	nty_poll_inner(&fds, 1, 1);
+
+	int ret = sendto_f(sockfd, buf, len, flags, dest_addr, addrlen);
+	if (ret < 0) {
+		if (errno == EAGAIN) return ret;
+		if (errno == ECONNRESET) return 0;
+		
+		printf("recv error : %d, ret : %d\n", errno, ret);
+		assert(0);
+	}
+	return ret;
+
+}
+
+
+
+int accept(int fd, struct sockaddr *addr, socklen_t *len) {
+
+	if (!accept_f) init_hook();
+
+	printf("accept\n");
+	
+	int sockfd = -1;
+	int timeout = 1;
+	nty_coroutine *co = nty_coroutine_get_sched()->curr_thread;
+	
+	while (1) {
+		struct pollfd fds;
+		fds.fd = fd;
+		fds.events = POLLIN | POLLERR | POLLHUP;
+		nty_poll_inner(&fds, 1, timeout);
+
+		sockfd = accept_f(fd, addr, len);
+		if (sockfd < 0) {
+			if (errno == EAGAIN) {
+				continue;
+			} else if (errno == ECONNABORTED) {
+				printf("accept : ECONNABORTED\n");
+				
+			} else if (errno == EMFILE || errno == ENFILE) {
+				printf("accept : EMFILE || ENFILE\n");
+			}
+			return -1;
+		} else {
+			break;
+		}
+	}
+
+	int ret = fcntl(sockfd, F_SETFL, O_NONBLOCK);
+	if (ret == -1) {
+		close(sockfd);
+		return -1;
+	}
+	int reuse = 1;
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *)&reuse, sizeof(reuse));
+	
+	return sockfd;
+}
+
+int close(int fd) {
+
+	if (!close_f) init_hook();
+
+	return close_f(fd);
+}
+
+
+
+int connect(int fd, const struct sockaddr *addr, socklen_t addrlen) {
+
+	if (!connect_f) init_hook();
+
+	printf("[%s:%s:%d]connect\n", __FILE__, __func__, __LINE__);
+
+	int ret = 0;
+
+	while (1) {
+
+		struct pollfd fds;
+		fds.fd = fd;
+		fds.events = POLLOUT | POLLERR | POLLHUP;
+		nty_poll_inner(&fds, 1, 1);
+
+		printf("nty_poll_inner\n");
+		ret = connect_f(fd, addr, addrlen);
+		if (ret == 0) break;
+
+		if (ret == -1 && (errno == EAGAIN ||
+			errno == EWOULDBLOCK || 
+			errno == EINPROGRESS)) {
+			continue;
+		} else {
+			break;
+		}
+	}
+
+	printf("connect ret: %d\n", ret);
+
+	return ret;
+}
+
+
+
+
+
+
+
+
+
+#endif
+
+
+
+
+
+
+
+
+
 
 
 

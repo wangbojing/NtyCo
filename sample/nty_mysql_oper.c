@@ -296,7 +296,7 @@ Exit:
 
 int main() {
 #if 1
-	init_hook();
+	//init_hook();
 
 	nty_coroutine *co = NULL;
 	nty_coroutine_create(&co, coroutine_func, NULL);

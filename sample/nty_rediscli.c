@@ -91,7 +91,7 @@ void coroutine_func(void *arg) {
 
 int main(int argc, char **argv) {
 
-	init_hook();
+	//init_hook();
 
 	nty_coroutine *co = NULL;
 	nty_coroutine_create(&co, coroutine_func, NULL);
@@ -100,6 +100,7 @@ int main(int argc, char **argv) {
 
 
 }
+
 
 
 
