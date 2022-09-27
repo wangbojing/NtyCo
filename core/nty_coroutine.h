@@ -50,6 +50,7 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 
+#define _USE_UCONTEXT
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -64,6 +65,10 @@
 #include <sys/time.h>
 #include <sys/mman.h>
 #include <netinet/tcp.h>
+
+#ifdef _USE_UCONTEXT
+#include <ucontext.h>
+#endif
 
 #include <sys/epoll.h>
 #include <sys/poll.h>
@@ -129,6 +134,7 @@ typedef struct _nty_coroutine_rbtree_sleep nty_coroutine_rbtree_sleep;
 typedef struct _nty_coroutine_rbtree_wait nty_coroutine_rbtree_wait;
 
 
+#ifndef _USE_UCONTEXT
 typedef struct _nty_cpu_ctx {
 	void *esp; //
 	void *ebp;
@@ -142,11 +148,16 @@ typedef struct _nty_cpu_ctx {
 	void *r4;
 	void *r5;
 } nty_cpu_ctx;
+#endif
 
 ///
 typedef struct _nty_schedule {
 	uint64_t birth;
+#ifdef _USE_UCONTEXT
+	ucontext_t ctx;
+#else
 	nty_cpu_ctx ctx;
+#endif
 	void *stack;
 	size_t stack_size;
 	int spawned_coroutines;
@@ -178,7 +189,11 @@ typedef struct _nty_coroutine {
 
 	//private
 	
+#ifdef _USE_UCONTEXT
+	ucontext_t ctx;
+#else
 	nty_cpu_ctx ctx;
+#endif
 	proc_coroutine func;
 	void *arg;
 	void *data;
@@ -233,7 +248,11 @@ typedef struct _nty_coroutine {
 
 
 typedef struct _nty_coroutine_compute_sched {
+#ifdef _USE_UCONTEXT
+	ucontext_t ctx;
+#else
 	nty_cpu_ctx ctx;
+#endif
 	nty_coroutine_queue coroutines;
 
 	nty_coroutine *curr_coroutine;
