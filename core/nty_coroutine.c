@@ -49,6 +49,35 @@ static pthread_once_t sched_key_once = PTHREAD_ONCE_INIT;
 
 // https://github.com/halayli/lthread/blob/master/src/lthread.c#L58
 
+#ifdef _USE_UCONTEXT
+
+static void
+_save_stack(nty_coroutine *co) {
+	char* top = co->sched->stack + co->sched->stack_size;
+	char dummy = 0;
+	assert(top - &dummy <= NTY_CO_MAX_STACKSIZE);
+	if (co->stack_size < top - &dummy) {
+		co->stack = realloc(co->stack, top - &dummy);
+		assert(co->stack != NULL);
+	}
+	co->stack_size = top - &dummy;
+	memcpy(co->stack, &dummy, co->stack_size);
+}
+
+static void
+_load_stack(nty_coroutine *co) {
+	memcpy(co->sched->stack + co->sched->stack_size - co->stack_size, co->stack, co->stack_size);
+}
+
+static void _exec(void *lt) {
+	nty_coroutine *co = (nty_coroutine*)lt;
+	co->func(co->arg);
+	co->status |= (BIT(NTY_COROUTINE_STATUS_EXITED) | BIT(NTY_COROUTINE_STATUS_FDEOF) | BIT(NTY_COROUTINE_STATUS_DETACH));
+	nty_coroutine_yield(co);
+}
+
+#else
+
 int _switch(nty_cpu_ctx *new_ctx, nty_cpu_ctx *cur_ctx);
 
 #ifdef __i386__
@@ -124,6 +153,21 @@ static void _exec(void *lt) {
 #endif
 }
 
+static inline void nty_coroutine_madvise(nty_coroutine *co) {
+
+	size_t current_stack = (co->stack + co->stack_size) - co->ctx.esp;
+	assert(current_stack <= co->stack_size);
+
+	if (current_stack < co->last_stack_size &&
+		co->last_stack_size > co->sched->page_size) {
+		size_t tmp = current_stack + (-current_stack & (co->sched->page_size - 1));
+		assert(madvise(co->stack, co->stack_size-tmp, MADV_DONTNEED) == 0);
+	}
+	co->last_stack_size = current_stack;
+}
+
+#endif
+
 extern int nty_schedule_create(int stack_size);
 
 
@@ -145,6 +189,15 @@ void nty_coroutine_free(nty_coroutine *co) {
 
 static void nty_coroutine_init(nty_coroutine *co) {
 
+#ifdef _USE_UCONTEXT
+	getcontext(&co->ctx);
+	co->ctx.uc_stack.ss_sp = co->sched->stack;
+	co->ctx.uc_stack.ss_size = co->sched->stack_size;
+	co->ctx.uc_link = &co->sched->ctx;
+	// printf("TAG21\n");
+	makecontext(&co->ctx, (void (*)(void)) _exec, 1, (void*)co);
+	// printf("TAG22\n");
+#else
 	void **stack = (void **)(co->stack + co->stack_size);
 
 	stack[-3] = NULL;
@@ -153,40 +206,43 @@ static void nty_coroutine_init(nty_coroutine *co) {
 	co->ctx.esp = (void*)stack - (4 * sizeof(void*));
 	co->ctx.ebp = (void*)stack - (3 * sizeof(void*));
 	co->ctx.eip = (void*)_exec;
+#endif
 	co->status = BIT(NTY_COROUTINE_STATUS_READY);
 	
 }
 
 void nty_coroutine_yield(nty_coroutine *co) {
 	co->ops = 0;
-	_switch(&co->sched->ctx, &co->ctx);
-}
-
-static inline void nty_coroutine_madvise(nty_coroutine *co) {
-
-	size_t current_stack = (co->stack + co->stack_size) - co->ctx.esp;
-	assert(current_stack <= co->stack_size);
-
-	if (current_stack < co->last_stack_size &&
-		co->last_stack_size > co->sched->page_size) {
-		size_t tmp = current_stack + (-current_stack & (co->sched->page_size - 1));
-		assert(madvise(co->stack, co->stack_size-tmp, MADV_DONTNEED) == 0);
+#ifdef _USE_UCONTEXT
+	if ((co->status & BIT(NTY_COROUTINE_STATUS_EXITED)) == 0) {
+		_save_stack(co);
 	}
-	co->last_stack_size = current_stack;
+	swapcontext(&co->ctx, &co->sched->ctx);
+#else
+	_switch(&co->sched->ctx, &co->ctx);
+#endif
 }
 
 int nty_coroutine_resume(nty_coroutine *co) {
 	
 	if (co->status & BIT(NTY_COROUTINE_STATUS_NEW)) {
 		nty_coroutine_init(co);
+	} 
+#ifdef _USE_UCONTEXT	
+	else {
+		_load_stack(co);
 	}
-
+#endif
 	nty_schedule *sched = nty_coroutine_get_sched();
 	sched->curr_thread = co;
+#ifdef _USE_UCONTEXT
+	swapcontext(&sched->ctx, &co->ctx);
+#else
 	_switch(&co->ctx, &co->sched->ctx);
+	nty_coroutine_madvise(co);
+#endif
 	sched->curr_thread = NULL;
 
-	nty_coroutine_madvise(co);
 #if 1
 	if (co->status & BIT(NTY_COROUTINE_STATUS_EXITED)) {
 		if (co->status & BIT(NTY_COROUTINE_STATUS_DETACH)) {
@@ -264,15 +320,19 @@ int nty_coroutine_create(nty_coroutine **new_co, proc_coroutine func, void *arg)
 		return -2;
 	}
 
+#ifdef _USE_UCONTEXT
+	co->stack = NULL;
+	co->stack_size = 0;
+#else
 	int ret = posix_memalign(&co->stack, getpagesize(), sched->stack_size);
 	if (ret) {
 		printf("Failed to allocate stack for new coroutine\n");
 		free(co);
 		return -3;
 	}
-
-	co->sched = sched;
 	co->stack_size = sched->stack_size;
+#endif
+	co->sched = sched;
 	co->status = BIT(NTY_COROUTINE_STATUS_NEW); //
 	co->id = sched->spawned_coroutines ++;
 	co->func = func;

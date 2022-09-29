@@ -50,7 +50,7 @@
 
 
 
-#define NTY_SERVER_IPADDR		"192.168.189.1"
+#define NTY_SERVER_IPADDR		"127.0.0.1"
 #define NTY_SERVER_PORT			9096
 
 int init_client(void) {

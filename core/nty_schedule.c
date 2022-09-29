@@ -189,6 +189,9 @@ void nty_schedule_free(nty_schedule *sched) {
 	if (sched->eventfd > 0) {
 		close(sched->eventfd);
 	}
+	if (sched->stack != NULL) {
+		free(sched->stack);
+	}
 	
 	free(sched);
 
@@ -219,6 +222,14 @@ int nty_schedule_create(int stack_size) {
 	sched->stack_size = sched_stack_size;
 	sched->page_size = getpagesize();
 
+#ifdef _USE_UCONTEXT
+	int ret = posix_memalign(&sched->stack, sched->page_size, sched->stack_size);
+	assert(ret == 0);
+#else
+	sched->stack = NULL;
+	bzero(&sched->ctx, sizeof(nty_cpu_ctx));
+#endif
+
 	sched->spawned_coroutines = 0;
 	sched->default_timeout = 3000000u;
 
@@ -231,7 +242,6 @@ int nty_schedule_create(int stack_size) {
 	TAILQ_INIT(&sched->defer);
 	LIST_INIT(&sched->busy);
 
-	bzero(&sched->ctx, sizeof(nty_cpu_ctx));
 }
 
 
