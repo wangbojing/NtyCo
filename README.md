@@ -20,6 +20,20 @@
 $ make
 ```
 
+#### err info
+```
+nty_mysql_oper.c:8:19: fatal error: mysql.h: No such file or directory
+
+解决方案：
+# sudo apt-get install libmysqlclient-dev
+
+nty_rediscli.c:11:21: fatal error: hiredis.h: No such file or directory
+
+解决方案：
+需要编译安装hiredis: https://github.com/redis/hiredis
+
+```
+
 
 #### server 
 ```
