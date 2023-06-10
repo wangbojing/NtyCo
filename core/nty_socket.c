@@ -341,11 +341,11 @@ int init_hook(void) {
 
 	socket_f = (socket_t)dlsym(RTLD_NEXT, "socket");
 	
-	//read_f = (read_t)dlsym(RTLD_NEXT, "read");
+	read_f = (read_t)dlsym(RTLD_NEXT, "read");
 	recv_f = (recv_t)dlsym(RTLD_NEXT, "recv");
 	recvfrom_f = (recvfrom_t)dlsym(RTLD_NEXT, "recvfrom");
 
-	//write_f = (write_t)dlsym(RTLD_NEXT, "write");
+	write_f = (write_t)dlsym(RTLD_NEXT, "write");
 	send_f = (send_t)dlsym(RTLD_NEXT, "send");
     sendto_f = (sendto_t)dlsym(RTLD_NEXT, "sendto");
 
@@ -376,13 +376,11 @@ int socket(int domain, int type, int protocol) {
 	
 	return fd;
 }
-/*
+
 ssize_t read(int fd, void *buf, size_t count) {
 
 	if (!read_f) init_hook();
 
-	printf("read\n");
-	
 	struct pollfd fds;
 	fds.fd = fd;
 	fds.events = POLLIN | POLLERR | POLLHUP;
@@ -398,13 +396,11 @@ ssize_t read(int fd, void *buf, size_t count) {
 	}
 	return ret;
 }
-*/
+
 ssize_t recv(int fd, void *buf, size_t len, int flags) {
 
 	if (!recv_f) init_hook();
 
-	printf("recv\n");
-	
 	struct pollfd fds;
 	fds.fd = fd;
 	fds.events = POLLIN | POLLERR | POLLHUP;
@@ -427,8 +423,6 @@ ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
 
 	if (!recvfrom_f) init_hook();
 
-	printf("recvfrom\n");
-
 	struct pollfd fds;
 	fds.fd = fd;
 	fds.events = POLLIN | POLLERR | POLLHUP;
@@ -447,13 +441,11 @@ ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
 
 }
 
-/*
+
 ssize_t write(int fd, const void *buf, size_t count) {
 
 	if (!write_f) init_hook();
 
-	printf("write\n");
-	
 	int sent = 0;
 
 	int ret = write_f(fd, ((char*)buf)+sent, count-sent);
@@ -478,14 +470,12 @@ ssize_t write(int fd, const void *buf, size_t count) {
 	
 	return sent;
 }
-*/
+
 
 ssize_t send(int fd, const void *buf, size_t len, int flags) {
 
 	if (!send_f) init_hook();
 
-	printf("send\n");
-	
 	int sent = 0;
 
 	int ret = send_f(fd, ((char*)buf)+sent, len-sent, flags);
@@ -516,8 +506,6 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 	if (!sendto_f) init_hook();
 
-	printf("sendto\n");
-	
 	struct pollfd fds;
 	fds.fd = sockfd;
 	fds.events = POLLOUT | POLLERR | POLLHUP;
@@ -542,8 +530,6 @@ int accept(int fd, struct sockaddr *addr, socklen_t *len) {
 
 	if (!accept_f) init_hook();
 
-	printf("accept\n");
-	
 	int sockfd = -1;
 	int timeout = 1;
 	nty_coroutine *co = nty_coroutine_get_sched()->curr_thread;
@@ -594,8 +580,6 @@ int connect(int fd, const struct sockaddr *addr, socklen_t addrlen) {
 
 	if (!connect_f) init_hook();
 
-	printf("[%s:%s:%d]connect\n", __FILE__, __func__, __LINE__);
-
 	int ret = 0;
 
 	while (1) {
@@ -605,7 +589,6 @@ int connect(int fd, const struct sockaddr *addr, socklen_t addrlen) {
 		fds.events = POLLOUT | POLLERR | POLLHUP;
 		nty_poll_inner(&fds, 1, 1);
 
-		printf("nty_poll_inner\n");
 		ret = connect_f(fd, addr, addrlen);
 		if (ret == 0) break;
 
@@ -617,8 +600,6 @@ int connect(int fd, const struct sockaddr *addr, socklen_t addrlen) {
 			break;
 		}
 	}
-
-	printf("connect ret: %d\n", ret);
 
 	return ret;
 }

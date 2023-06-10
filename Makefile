@@ -7,7 +7,7 @@ ROOT_DIR = $(shell pwd)
 OBJS_DIR = $(ROOT_DIR)/objs
 BIN_DIR = $(ROOT_DIR)/bin
 
-BIN = nty_server nty_client nty_bench nty_server_mulcore nty_http_server nty_mysql_client nty_mysql_oper nty_websocket_server nty_http_server_mulcore ntyco_httpd nty_rediscli
+BIN = nty_server nty_client nty_bench nty_server_mulcore hook_tcpserver nty_http_server nty_mysql_client nty_mysql_oper nty_websocket_server nty_http_server_mulcore ntyco_httpd nty_rediscli libntyco.a
 FLAG = -lpthread -O3 -lcrypto -lssl -lmysqlclient -lhiredis -ldl -I $(ROOT_DIR)/core  -I /usr/include/mysql/ -I /usr/local/include/hiredis/
 
 CUR_SOURCE = ${wildcard *.c}
@@ -56,11 +56,17 @@ nty_mysql_oper : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR
 nty_rediscli : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_rediscli.o
 	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG)
 
+hook_tcpserver: $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/hook_tcpserver.o
+	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG)
+
 nty_http_server_mulcore : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_http_server_mulcore.o
 	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG) 
 
 ntyco_httpd : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/ntyco_httpd.o
 	$(CC) -o $(BIN_DIR)/$@ $^ $(FLAG) 
+
+libntyco.a : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o
+	ar rcs $@ $^
 
 clean :
 	rm -rf $(BIN_DIR)/* $(OBJS_DIR)/*

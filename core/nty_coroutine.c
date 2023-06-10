@@ -246,7 +246,6 @@ int nty_coroutine_resume(nty_coroutine *co) {
 #if 1
 	if (co->status & BIT(NTY_COROUTINE_STATUS_EXITED)) {
 		if (co->status & BIT(NTY_COROUTINE_STATUS_DETACH)) {
-			printf("nty_coroutine_resume --> \n");
 			nty_coroutine_free(co);
 		}
 		return -1;
@@ -261,9 +260,7 @@ void nty_coroutine_renice(nty_coroutine *co) {
 #if 1
 	if (co->ops < 5) return ;
 #endif
-	printf("nty_coroutine_renice\n");
 	TAILQ_INSERT_TAIL(&nty_coroutine_get_sched()->ready, co, ready_next);
-	printf("nty_coroutine_renice 111\n");
 	nty_coroutine_yield(co);
 }
 
