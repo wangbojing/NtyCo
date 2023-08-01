@@ -15,8 +15,11 @@ CUR_OBJS = ${patsubst %.c, %.o, %(CUR_SOURCE)}
 
 export CC BIN_DIR OBJS_DIR ROOT_IDR FLAG BIN ECHO EFLAG
 
-all : $(SUB_DIR) $(BIN)
+
+
+all : check_objs check_bin $(SUB_DIR) $(BIN)
 .PHONY : all
+
 
 
 $(SUB_DIR) : ECHO
@@ -27,6 +30,16 @@ $(SUB_DIR) : ECHO
 
 ECHO :
 	@echo $(SUB_DIR)
+
+check_objs:
+	if [ ! -d "objs" ]; then \
+		mkdir -p objs;  \
+	fi
+
+check_bin:
+	if [ ! -d "bin" ]; then \
+		mkdir -p bin;   \
+	fi
 
 
 nty_server : $(OBJS_DIR)/nty_socket.o $(OBJS_DIR)/nty_coroutine.o $(OBJS_DIR)/nty_epoll.o $(OBJS_DIR)/nty_schedule.o $(OBJS_DIR)/nty_server.o
