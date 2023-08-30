@@ -23,12 +23,12 @@ export CC BIN_DIR OBJS_DIR ROOT_IDR FLAG BIN ECHO EFLAG
 
 
 
-all : check_objs check_bin $(SUB_DIR)
+all : check_objs check_bin $(SUB_DIR) $(LIB)
 .PHONY : all
 
 bin: $(SAMPLE_DIR) $(BIN)
 
-lib: $(SUB_DIR) $(LIB)
+# lib: $(SUB_DIR) $(LIB)
 
 $(SUB_DIR) : ECHO
 	make -C $@

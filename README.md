@@ -17,12 +17,8 @@
 #### compile
 
 ```
-编译ntyco的core文件
+编译ntyco的core文件与编译libntyco.a的静态库
 $ make
-
-// 如果只需要libntyo.a 用于其他工程，编译libntyco.a的静态库
-$ make lib
-
 
 // 编译sample
 $ make bin
