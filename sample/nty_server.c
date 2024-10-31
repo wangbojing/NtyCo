@@ -119,7 +119,9 @@ void server(void *arg) {
 		printf("new client comming\n");
 
 		nty_coroutine *read_co;
-		nty_coroutine_create(&read_co, server_reader, &cli_fd);
+		int *arg = malloc(sizeof(int));
+		*arg = cli_fd;
+		nty_coroutine_create(&read_co, server_reader, arg);
 
 	}
 	
