@@ -180,11 +180,6 @@ void nty_coroutine_free(nty_coroutine *co) {
 		free(co->stack);
 		co->stack = NULL;
 	}
-	if (co->arg)
-	{
-		free(co->arg);
-		co->arg = NULL;
-	}
 #endif
 	if (co) {
 		free(co);
