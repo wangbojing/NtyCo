@@ -53,6 +53,7 @@
 
 void server_reader(void *arg) {
 	int fd = *(int *)arg;
+	free(arg);
 	int ret = 0;
 
  
