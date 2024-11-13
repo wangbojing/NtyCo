@@ -333,8 +333,8 @@ extern socket_t socket_f;
 typedef int(*connect_t)(int, const struct sockaddr *, socklen_t);
 extern connect_t connect_f;
 
-typedef ssize_t(*read_t)(int, void *, size_t);
-extern read_t read_f;
+//typedef ssize_t(*read_t)(int, void *, size_t);
+//extern read_t read_f;
 
 
 typedef ssize_t(*recv_t)(int sockfd, void *buf, size_t len, int flags);
@@ -344,8 +344,8 @@ typedef ssize_t(*recvfrom_t)(int sockfd, void *buf, size_t len, int flags,
         struct sockaddr *src_addr, socklen_t *addrlen);
 extern recvfrom_t recvfrom_f;
 
-typedef ssize_t(*write_t)(int, const void *, size_t);
-extern write_t write_f;
+//typedef ssize_t(*write_t)(int, const void *, size_t);
+//extern write_t write_f;
 
 typedef ssize_t(*send_t)(int sockfd, const void *buf, size_t len, int flags);
 extern send_t send_f;

@@ -324,11 +324,11 @@ int nty_close(int fd) {
 
 socket_t socket_f = NULL;
 
-read_t read_f = NULL;
+//read_t read_f = NULL;
 recv_t recv_f = NULL;
 recvfrom_t recvfrom_f = NULL;
 
-write_t write_f = NULL;
+//write_t write_f = NULL;
 send_t send_f = NULL;
 sendto_t sendto_f = NULL;
 
@@ -341,11 +341,11 @@ int init_hook(void) {
 
 	socket_f = (socket_t)dlsym(RTLD_NEXT, "socket");
 	
-	read_f = (read_t)dlsym(RTLD_NEXT, "read");
+	//read_f = (read_t)dlsym(RTLD_NEXT, "read");
 	recv_f = (recv_t)dlsym(RTLD_NEXT, "recv");
 	recvfrom_f = (recvfrom_t)dlsym(RTLD_NEXT, "recvfrom");
 
-	write_f = (write_t)dlsym(RTLD_NEXT, "write");
+	//write_f = (write_t)dlsym(RTLD_NEXT, "write");
 	send_f = (send_t)dlsym(RTLD_NEXT, "send");
     sendto_f = (sendto_t)dlsym(RTLD_NEXT, "sendto");
 
@@ -376,7 +376,7 @@ int socket(int domain, int type, int protocol) {
 	
 	return fd;
 }
-
+/*
 ssize_t read(int fd, void *buf, size_t count) {
 
 	if (!read_f) init_hook();
@@ -396,7 +396,7 @@ ssize_t read(int fd, void *buf, size_t count) {
 	}
 	return ret;
 }
-
+*/
 ssize_t recv(int fd, void *buf, size_t len, int flags) {
 
 	if (!recv_f) init_hook();
@@ -441,7 +441,7 @@ ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
 
 }
 
-
+/*
 ssize_t write(int fd, const void *buf, size_t count) {
 
 	if (!write_f) init_hook();
@@ -470,7 +470,7 @@ ssize_t write(int fd, const void *buf, size_t count) {
 	
 	return sent;
 }
-
+*/
 
 ssize_t send(int fd, const void *buf, size_t len, int flags) {
 
