@@ -324,11 +324,11 @@ int nty_close(int fd) {
 
 socket_t socket_f = NULL;
 
-//read_t read_f = NULL;
+read_t read_f = NULL;
 recv_t recv_f = NULL;
 recvfrom_t recvfrom_f = NULL;
 
-//write_t write_f = NULL;
+write_t write_f = NULL;
 send_t send_f = NULL;
 sendto_t sendto_f = NULL;
 
@@ -341,11 +341,11 @@ int init_hook(void) {
 
 	socket_f = (socket_t)dlsym(RTLD_NEXT, "socket");
 	
-	//read_f = (read_t)dlsym(RTLD_NEXT, "read");
+	read_f = (read_t)dlsym(RTLD_NEXT, "read");
 	recv_f = (recv_t)dlsym(RTLD_NEXT, "recv");
 	recvfrom_f = (recvfrom_t)dlsym(RTLD_NEXT, "recvfrom");
 
-	//write_f = (write_t)dlsym(RTLD_NEXT, "write");
+	write_f = (write_t)dlsym(RTLD_NEXT, "write");
 	send_f = (send_t)dlsym(RTLD_NEXT, "send");
     sendto_f = (sendto_t)dlsym(RTLD_NEXT, "sendto");
 
@@ -360,6 +360,11 @@ int init_hook(void) {
 int socket(int domain, int type, int protocol) {
 
 	if (!socket_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return socket_f(domain, type, protocol);
+	}
 
 	int fd = socket_f(domain, type, protocol);
 	if (fd == -1) {
@@ -376,10 +381,15 @@ int socket(int domain, int type, int protocol) {
 	
 	return fd;
 }
-/*
+
 ssize_t read(int fd, void *buf, size_t count) {
 
 	if (!read_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return read_f(fd, buf, count);
+	}
 
 	struct pollfd fds;
 	fds.fd = fd;
@@ -396,10 +406,15 @@ ssize_t read(int fd, void *buf, size_t count) {
 	}
 	return ret;
 }
-*/
+
 ssize_t recv(int fd, void *buf, size_t len, int flags) {
 
 	if (!recv_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return recv_f(fd, buf, len, flags);
+	}
 
 	struct pollfd fds;
 	fds.fd = fd;
@@ -423,6 +438,11 @@ ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
 
 	if (!recvfrom_f) init_hook();
 
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return recvfrom_f(fd, buf, len, flags, src_addr, addrlen);
+	}
+
 	struct pollfd fds;
 	fds.fd = fd;
 	fds.events = POLLIN | POLLERR | POLLHUP;
@@ -441,10 +461,15 @@ ssize_t recvfrom(int fd, void *buf, size_t len, int flags,
 
 }
 
-/*
+
 ssize_t write(int fd, const void *buf, size_t count) {
 
 	if (!write_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return write_f(fd, buf, count);
+	}
 
 	int sent = 0;
 
@@ -470,11 +495,16 @@ ssize_t write(int fd, const void *buf, size_t count) {
 	
 	return sent;
 }
-*/
+
 
 ssize_t send(int fd, const void *buf, size_t len, int flags) {
 
 	if (!send_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return send_f(fd, buf, len, flags);
+	}
 
 	int sent = 0;
 
@@ -506,6 +536,11 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 
 	if (!sendto_f) init_hook();
 
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return sendto_f(sockfd, buf, len, flags, dest_addr, addrlen);
+	}
+
 	struct pollfd fds;
 	fds.fd = sockfd;
 	fds.events = POLLOUT | POLLERR | POLLHUP;
@@ -529,6 +564,11 @@ ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
 int accept(int fd, struct sockaddr *addr, socklen_t *len) {
 
 	if (!accept_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return accept_f(fd, addr, len);
+	}
 
 	int sockfd = -1;
 	int timeout = 1;
@@ -579,6 +619,11 @@ int close(int fd) {
 int connect(int fd, const struct sockaddr *addr, socklen_t addrlen) {
 
 	if (!connect_f) init_hook();
+
+	nty_schedule *sched = nty_coroutine_get_sched();
+	if (sched == NULL) {
+		return connect_f(fd, addr, addrlen);
+	}
 
 	int ret = 0;
 

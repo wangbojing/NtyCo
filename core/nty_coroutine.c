@@ -285,7 +285,7 @@ static void nty_coroutine_sched_key_destructor(void *data) {
 	free(data);
 }
 
-static void nty_coroutine_sched_key_creator(void) {
+static void __attribute__((constructor(1000))) nty_coroutine_sched_key_creator(void) {
 	assert(pthread_key_create(&global_sched_key, nty_coroutine_sched_key_destructor) == 0);
 	assert(pthread_setspecific(global_sched_key, NULL) == 0);
 	
