@@ -273,6 +273,7 @@ void nty_coroutine_sleep(uint64_t msecs) {
 		nty_coroutine_yield(co);
 	} else {
 		nty_schedule_sched_sleepdown(co, msecs);
+		nty_coroutine_yield(co);
 	}
 }
 
