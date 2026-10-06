@@ -51,7 +51,7 @@ static pthread_once_t sched_key_once = PTHREAD_ONCE_INIT;
 
 #ifdef _USE_UCONTEXT
 
-static void
+static void __attribute__((noinline))
 _save_stack(nty_coroutine *co) {
 	char* top = co->sched->stack + co->sched->stack_size;
 	char dummy = 0;
